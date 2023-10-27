@@ -51,3 +51,7 @@ There are numerous tools and libraries available for developing with LLMs. Howev
 ```
 
 I'm eager to discover additional applications for LLMs in trading and explore their use in my own strategies, as well as in others. You can find the discussion [here](https://nexusfi.com/elite-quantitative-genai-llm/60245-askthechart-indicator.html#post)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
