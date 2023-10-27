@@ -20,7 +20,8 @@ We utilize ChatGPT functions for tool-switching, requiring the use of one of the
 ```plaintext
 0) Indicator settings
 URL: https://api.openai.com/v1/chat/completions
-API Key: Your OpenAI API key\nModel: gpt-4-0613
+API Key: Your OpenAI API key
+Model: gpt-4-0613
 ```
 
 If you are using Azure OpenAI, the model's name should match the one defined in your deployment, and the required model version is 0613
@@ -30,7 +31,8 @@ If you are using Azure OpenAI, the model's name should match the one defined in 
 ```plaintext
 0) Indicator settings
 URL: https://{name}-east-2.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-07-01-preview
-API Key: Your OpenAI API key\nModel: gpt-4
+API Key: Your OpenAI API key
+Model: gpt-4
 ```
 
 **Cost Implications:**
