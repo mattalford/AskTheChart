@@ -37,6 +37,8 @@ using System.Xml.Serialization;
 // NT8 AskTheChart by pixel @ nexusfi.com, Version 0.1.0, released 10/19/2023 NT8 8.1.1.7 64-bit
 // 10/22/2023 v0.1.01 - Fix: model variable missing
 // 10/22/2023 v0.1.02 - Removed duplicate declarations
+// 11/14/2023 v0.1.03 - Removed delay for faster function calling
+// 11/14/2023 v0.1.04 - Fix: error when using dynamic type
 #endregion
 
 #region Acknowledgments
@@ -55,7 +57,6 @@ using System.Xml.Serialization;
 - Central logging
 - Cancel API request on resets or exits
 - Markdown formatting
-- Optional API delay
 - Add more drawing tools
 - Add more agent examples
 - Color options for drawing tool functions
@@ -1337,7 +1338,6 @@ namespace NinjaTrader.NinjaScript.Indicators.Protechy
                                 string chatbotResponseLine;
                                 while ((chatbotResponseLine = await reader.ReadLineAsync()) != null)
                                 {
-                                    await Task.Delay(1);
                                     ProcessChatbotStreamContent(chatbotResponseLine);
                                 }
                             }
@@ -1437,16 +1437,18 @@ namespace NinjaTrader.NinjaScript.Indicators.Protechy
             {
                 string jsonData = jsonResponse.Substring(dataIndex);
                 var serializer = new JavaScriptSerializer();
+			
                 try
                 {
-                    dynamic responseObject = serializer.Deserialize<dynamic>(jsonData);
+                    var responseObject = serializer.Deserialize<Dictionary<string, object>>(jsonData);  
+
                     if (responseObject.ContainsKey("choices"))
                     {
                         string choicesJson = serializer.Serialize(responseObject["choices"]);
                         if (choicesJson != "[]")
                         {
-
-                            dynamic firstChoice = responseObject["choices"][0];
+							var choices = serializer.Deserialize<List<Dictionary<string, object>>>(choicesJson);  
+							var firstChoice = choices[0];   
 
                             if (firstChoice.ContainsKey("finish_reason"))
                             {
@@ -1458,11 +1460,11 @@ namespace NinjaTrader.NinjaScript.Indicators.Protechy
                             }
                             if (firstChoice.ContainsKey("delta"))
                             {
-                                dynamic delta = firstChoice["delta"];
-                                if (delta.ContainsKey("role"))
+                                var delta = firstChoice["delta"] as Dictionary<string, object>;  
+                                if (delta != null && delta.ContainsKey("role"))  
                                 {
-                                    lastRole = delta["role"];
-                                    if (delta["role"] == "assistant")
+                                    lastRole = delta["role"].ToString(); 
+                                    if (lastRole == "assistant")
                                     {
                                         wasLastRoleAssistant = true;
                                     }
@@ -1471,28 +1473,33 @@ namespace NinjaTrader.NinjaScript.Indicators.Protechy
                                         wasLastRoleAssistant = false;
                                     }
                                 }
-                                if (wasLastRoleAssistant)
-                                {
-                                    if (delta.ContainsKey("function_call"))
-                                    {
-                                        if (delta["function_call"].ContainsKey("name"))
-                                        {
-                                            isFunctionCallName = true;
-                                            fullChatbotResponse.Clear();
-                                            functionCallName = delta["function_call"]["name"];
-                                        }
-                                        if (delta["function_call"].ContainsKey("arguments"))
-                                        {
-                                            isFunctionCallArguments = true;
-                                            return delta["function_call"]["arguments"];
-                                        }
-                                    }
-                                }
+								if (wasLastRoleAssistant)  
+								{  
+								    if (delta.ContainsKey("function_call"))  
+								    {  
+								        var functionCall = delta["function_call"] as Dictionary<string, object>;  
+								  
+								        if (functionCall != null && functionCall.ContainsKey("name"))  
+								        {  
+								            isFunctionCallName = true;  
+								            fullChatbotResponse.Clear();  
+								            functionCallName = functionCall["name"].ToString();  
+								        }  
+								        if (functionCall != null && functionCall.ContainsKey("arguments"))  
+								        {  
+								            isFunctionCallArguments = true;  
+								            return functionCall["arguments"].ToString();  
+								        }  
+								    }  
+								}  
+
                                 if (delta.ContainsKey("content"))
                                 {
+									Output.Process("Content: " + delta["content"].ToString(), PrintTo.OutputTab1);
                                     if (wasLastRoleAssistant)
                                     {
-                                        return delta["content"];
+										Output.Process("Content: " + delta["content"].ToString(), PrintTo.OutputTab1);
+                                        return delta["content"].ToString();
                                     }
                                 }
                             }
